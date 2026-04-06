@@ -1,0 +1,335 @@
+openapi: 3.0.0
+info:
+  title: Marketplace Chat API
+  description: API documentation for the MERN marketplace application featuring Paseto authentication, RBAC, and real-time chat.
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000/api
+    description: Local development server
+
+paths:
+  /auth/register:
+    post:
+      summary: Initiate registration by sending an OTP
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterInitiateInput'
+            example:
+              email: mars@example.com
+      responses:
+        '200':
+          description: OTP sent to email
+        '400':
+          description: User already exists
+        '500':
+          description: Server error
+
+  /auth/verify-otp:
+    post:
+      summary: Verify OTP and create user account
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyOtpInput'
+            example:
+              name: Mars
+              email: mars@example.com
+              password: secretpassword123
+              otp: "123456"
+      responses:
+        '201':
+          description: User registered successfully
+        '400':
+          description: Invalid or expired OTP
+        '500':
+          description: Server error
+
+  /auth/login:
+    post:
+      summary: Login an existing user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+            example:
+              email: mars@example.com
+              password: secretpassword123
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid email or password
+
+  /products:
+    get:
+      summary: Get all products
+      tags:
+        - Products
+      responses:
+        '200':
+          description: A list of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductResponse'
+    post:
+      summary: Create a new product
+      tags:
+        - Products
+      security:
+        - PasetoAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+            example:
+              title: "MacBook Pro M2"
+              description: "Lightly used, perfect condition."
+              price: 1200
+              image: "https://example.com/images/macbook.jpg"
+              location: "Ujjain, Madhya Pradesh"
+      responses:
+        '201':
+          description: Product created successfully
+        '401':
+          description: Unauthorized - Token missing or invalid
+        '403':
+          description: Forbidden - Requires seller or admin role
+
+  /chat/send:
+    post:
+      summary: Send a message to a seller/buyer
+      tags:
+        - Chat
+      security:
+        - PasetoAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageInput'
+            example:
+              receiverId: "64a7b8f9c1234567890def12"
+              productId: "64a7b8f9c1234567890def34"
+              content: "Hi, is this product still available?"
+      responses:
+        '201':
+          description: Message sent successfully and real-time event triggered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Unauthorized
+
+  /chat/{otherUserId}/{productId}:
+    get:
+      summary: Get chat history between current user and another user for a specific product
+      tags:
+        - Chat
+      security:
+        - PasetoAuth: []
+      parameters:
+        - in: path
+          name: otherUserId
+          required: true
+          schema:
+            type: string
+          description: The ID of the other user in the chat
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+          description: The ID of the product being discussed
+      responses:
+        '200':
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    PasetoAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: PASETO
+      description: Enter your PASETO token in the format "Bearer <token>"
+
+  schemas:
+    RegisterInitiateInput:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+
+    VerifyOtpInput:
+      type: object
+      required:
+        - name
+        - email
+        - password
+        - otp
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        otp:
+          type: string
+
+    LoginInput:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    AuthResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "64a7b8f9c1234567890def12"
+        name:
+          type: string
+          example: "Mars"
+        email:
+          type: string
+          example: "mars@example.com"
+        token:
+          type: string
+          example: "v3.local.RY3tO_z..."
+
+    ProductInput:
+      type: object
+      required:
+        - title
+        - description
+        - price
+        - location
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        image:
+          type: string
+        location:
+          type: string
+
+    ProductResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "64a7b8f9c1234567890def34"
+        title:
+          type: string
+          example: "MacBook Pro M2"
+        description:
+          type: string
+          example: "Lightly used, perfect condition."
+        price:
+          type: number
+          example: 1200
+        image:
+          type: string
+          example: "https://example.com/images/macbook.jpg"
+        location:
+          type: string
+          example: "Ujjain, Madhya Pradesh"
+        seller:
+          type: object
+          properties:
+            _id:
+              type: string
+              example: "64a7b8f9c1234567890def12"
+            name:
+              type: string
+              example: "Mars"
+            email:
+              type: string
+              example: "mars@example.com"
+
+    MessageInput:
+      type: object
+      required:
+        - receiverId
+        - productId
+        - content
+      properties:
+        receiverId:
+          type: string
+        productId:
+          type: string
+        content:
+          type: string
+
+    MessageResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "64a7b8f9c1234567890def56"
+        sender:
+          type: string
+          example: "64a7b8f9c1234567890def00"
+        receiver:
+          type: string
+          example: "64a7b8f9c1234567890def12"
+        product:
+          type: string
+          example: "64a7b8f9c1234567890def34"
+        content:
+          type: string
+          example: "Hi, is this product still available?"
+        isRead:
+          type: boolean
+          example: false
+        createdAt:
+          type: string
+          format: date-time
