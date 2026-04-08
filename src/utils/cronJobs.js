@@ -1,5 +1,5 @@
-import cron from 'node-cron';
-import Product from '../models/Product.js'; 
+const cron = require('node-cron');
+const Product = require('../models/Product.js');
 
 const performCleanup = async () => {
     try {
@@ -11,10 +11,9 @@ const performCleanup = async () => {
         console.error("Cron Job Failed:", error);
     }
 };
-
 const initItemsCleanup = () => {
-    performCleanup(); 
+    performCleanup();
     cron.schedule('0 0 * * *', performCleanup);
 };
 
-export default initItemsCleanup;
+module.exports = initItemsCleanup;
