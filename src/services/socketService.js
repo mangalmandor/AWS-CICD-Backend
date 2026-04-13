@@ -43,6 +43,25 @@ const initSocket = (server) => {
             }
         });
 
+        socket.on('typing', (data) => {
+            const targetSockets = userSockets.get(data.receiverId.toString());
+            if (targetSockets) {
+                targetSockets.forEach(socketId => {
+                    // Send the typing event to the receiver
+                    io.to(socketId).emit('userTyping', data);
+                });
+            }
+        });
+
+        socket.on('stopTyping', (data) => {
+            const targetSockets = userSockets.get(data.receiverId.toString());
+            if (targetSockets) {
+                targetSockets.forEach(socketId => {
+                    io.to(socketId).emit('userStoppedTyping', data);
+                });
+            }
+        });
+
         socket.on('disconnect', () => {
             const userConnections = userSockets.get(userId);
             if (userConnections) {
