@@ -13,20 +13,25 @@ const register = async (req, res) => {
 
         await Otp.deleteMany({ email });
         await Otp.create({ email, otp });
-        sendEmailAlert({
+
+
+        await sendEmailAlert({
             to: email,
             subject: 'Your Registration OTP',
             text: `Your OTP for registration is: ${otp}. It is valid for 5 minutes.`
-        }).catch((err) => {
-            console.error('Background email failed to send:', err);
         });
 
         res.status(200).json({
             success: true,
             message: "OTP sent successfully! Please check your email."
         });
+
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error("Registration Error:", error.message);
+        res.status(500).json({
+            success: false,
+            error: "Failed to process registration. Please try again."
+        });
     }
 };
 
