@@ -37,12 +37,10 @@ const initSocket = (server) => {
         console.log(`User ${userId} connected.`);
 
         socket.on('sendMessage', (data) => {
-            console.log("📨 Message received on server:", data._id); // Just logging the ID to keep it clean
+            console.log("📨 Message received on server:", data._id);
 
-            // 1. Smartly find the target ID no matter what the database called it
             const targetUser = data.receiverId || data.receiver?._id || data.receiver;
 
-            // 2. If we found them, send it!
             if (targetUser) {
                 sendRealTimeMessage(targetUser.toString(), data);
             } else {
@@ -54,7 +52,6 @@ const initSocket = (server) => {
             const targetSockets = userSockets.get(data.receiverId.toString());
             if (targetSockets) {
                 targetSockets.forEach(socketId => {
-                    // Send the typing event to the receiver
                     io.to(socketId).emit('userTyping', data);
                 });
             }
