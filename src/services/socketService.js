@@ -37,9 +37,16 @@ const initSocket = (server) => {
         console.log(`User ${userId} connected.`);
 
         socket.on('sendMessage', (data) => {
-            console.log("📨 Message received on server:", data);
-            if (data.receiverId) {
-                sendRealTimeMessage(data.receiverId, data);
+            console.log("📨 Message received on server:", data._id); // Just logging the ID to keep it clean
+
+            // 1. Smartly find the target ID no matter what the database called it
+            const targetUser = data.receiverId || data.receiver?._id || data.receiver;
+
+            // 2. If we found them, send it!
+            if (targetUser) {
+                sendRealTimeMessage(targetUser.toString(), data);
+            } else {
+                console.log("❌ Socket Error: Could not find receiver ID in payload.");
             }
         });
 
