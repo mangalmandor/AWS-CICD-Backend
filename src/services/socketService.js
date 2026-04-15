@@ -13,8 +13,6 @@ const initSocket = (server) => {
             credentials: true
         }
     });
-
-    // Authentication Middleware
     io.use(async (socket, next) => {
         try {
             const token = socket.handshake.auth.token;
@@ -29,27 +27,21 @@ const initSocket = (server) => {
 
     io.on('connection', async (socket) => {
         const userId = socket.userId.toString();
-
-        // ==========================================
-        // 1. ONLINE STATUS LOGIC
-        // ==========================================
         if (!userSockets.has(userId)) {
             userSockets.set(userId, []);
-
-            // Jab user pehli baar connect ho (pehla tab khule)
-
             await User.findByIdAndUpdate(userId, { isOnline: true });
-            // Sabko batao ki Mars online aa gaya hai
         }
         userSockets.get(userId).push(socket.id);
 
         console.log(`User ${userId} connected.`);
-        socket.broadcast.emit('requestStatus', { requesterId: userId });
         io.emit('statusUpdate', { userId, isOnline: true });
 
-        // ==========================================
-        // 2. EXISTING LISTENERS (Message, Typing, etc.)
-        // ==========================================
+        for (let [id, sockets] of userSockets.entries()) {
+            if (id !== userId && sockets.length > 0) {
+                socket.emit('statusUpdate', { userId: id, isOnline: true });
+            }
+        }
+
         socket.on('sendMessage', (data) => {
             const targetUser = data.receiverId || data.receiver?._id || data.receiver;
             if (targetUser) {
@@ -61,7 +53,6 @@ const initSocket = (server) => {
             const targetSockets = userSockets.get(targetUserId.toString());
 
             if (targetSockets && targetSockets.length > 0) {
-                // Agar target user online hai, toh uske sockets ko bolo ki requester ko reply dein
                 targetSockets.forEach(socketId => {
                     io.to(socketId).emit('getPresenceRequest', { requesterId });
                 });
@@ -73,7 +64,6 @@ const initSocket = (server) => {
             const requesterSockets = userSockets.get(requesterId.toString());
 
             if (requesterSockets) {
-                // Requester ko batao ki main online hoon
                 requesterSockets.forEach(socketId => {
                     io.to(socketId).emit('statusUpdate', {
                         userId: socket.userId,
@@ -98,16 +88,12 @@ const initSocket = (server) => {
             }
         });
 
-        // ==========================================
-        // 3. DISCONNECT & LAST SEEN LOGIC
-        // ==========================================
         socket.on('disconnect', async () => {
             const userConnections = userSockets.get(userId);
             if (userConnections) {
                 const updatedConnections = userConnections.filter(id => id !== socket.id);
 
                 if (updatedConnections.length === 0) {
-                    // Jab user ne saare tabs band kar diye (Last seen yahan trigger hoga)
                     userSockets.delete(userId);
                     const now = new Date();
 
@@ -116,7 +102,6 @@ const initSocket = (server) => {
                             isOnline: false,
                             lastSeen: now
                         });
-                        // Sabko batao ki user offline gaya aur uska last seen kya hai
                         io.emit('statusUpdate', { userId, isOnline: false, lastSeen: now });
                         console.log(`User ${userId} is now offline.`);
                     } catch (err) {
