@@ -11,10 +11,12 @@ const app = express();
 app.use(cors({
     origin: [
         'http://localhost:5173',
+        'https://market-tred-frontend.vercel.app',
         process.env.CLIENT_URL
-    ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true
+    ].filter(Boolean),
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
