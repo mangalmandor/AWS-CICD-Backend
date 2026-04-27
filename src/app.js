@@ -30,5 +30,10 @@ app.use('/api/chat', chatRoutes);
 app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'Active', message: 'Server is awake!' });
 });
+app.get('/api/test', async (req, res) => {
+    res.json({
+        msg: 'test is completed'
+    })
+});
 
 module.exports = app;
