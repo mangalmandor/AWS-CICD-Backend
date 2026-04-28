@@ -32,7 +32,7 @@ app.get('/api/health', (req, res) => {
 });
 app.get('/api/test', async (req, res) => {
     res.json({
-        msg: 'test is completed successfully'
+        msg: 'test is completed successfully !!!'
     })
 });
 
