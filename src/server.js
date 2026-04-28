@@ -1,5 +1,4 @@
-require('dotenv').config();
-
+require('dotenv').config({ path: '/home/ubuntu/backend.env' });
 const http = require('http');
 const app = require('./app');
 const { connectDB } = require('./config/database');
