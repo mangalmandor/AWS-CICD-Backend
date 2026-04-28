@@ -32,7 +32,7 @@ app.get('/api/health', (req, res) => {
 });
 app.get('/api/test', async (req, res) => {
     res.json({
-        msg: 'test is completed and successfully running !'
+        msg: 'test route is perfectly giving response on api route!'
     })
 });
 
