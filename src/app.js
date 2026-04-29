@@ -13,6 +13,7 @@ app.use(cors({
     origin: [
         'http://localhost:5173',
         'https://market-tred-frontend.vercel.app',
+        'http://ec2-13-49-241-148.eu-north-1.compute.amazonaws.com',
         process.env.CLIENT_URL
     ].filter(Boolean),
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
